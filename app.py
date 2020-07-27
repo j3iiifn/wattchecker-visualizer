@@ -93,6 +93,14 @@ def aparse():
         'log_dir',
         help='path to log directory.'
     )
+    parser.add_argument(
+        '-l', '--host', default='127.0.0.1',
+        help='the hostname to listen on.'
+    )
+    parser.add_argument(
+        '-p', '--port', default=5000, type=int,
+        help='the port of the webserver.'
+    )
     return parser.parse_args()
 
 
@@ -100,7 +108,7 @@ def main():
     args = aparse()
     global log_dir
     log_dir = args.log_dir
-    app.run(debug=True)
+    app.run(debug=True, host=args.host, port=args.port)
 
 
 if __name__ == "__main__":
