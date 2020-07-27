@@ -15,7 +15,7 @@ function drawChartLast24Hours(wattPerMinuteLast24Hours) {
         type: 'line',
         data: {
             datasets: [{
-                label: 'Average W/min',
+                label: 'Average W / min',
                 data: wattPerMinuteLast24Hours,
                 backgroundColor: [
                     'rgba(255, 99, 132, 0.2)'
@@ -67,7 +67,7 @@ function drawChartLast3Days(wattHourLast3Days, sumBillsPer12HoursLast3Days) {
         data: {
             datasets: [
                 {
-                    label: 'Total bills/12h',
+                    label: 'Electricity bills / 12h',
                     yAxisID: 'Yen',
                     data: sumBillsPer12HoursLast3Days,
                     backgroundColor: 'rgba(255, 206, 86, 0.2)',
