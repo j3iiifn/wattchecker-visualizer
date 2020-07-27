@@ -27,37 +27,48 @@ def load_csv_files():
             )
             df_list.append(df_tmp)
 
-    return pd.concat(df_list, join='inner')
+    df = pd.concat(df_list, join='inner')
+    df.index = df.index.tz_localize(datetime.timezone.utc)
+    return df
 
 
 def dataframe_to_json(df):
     return df['W'].to_json(date_format='iso', orient='split')
 
 
-def dataframe_to_dict(df):
-    return df.to_dict(date_format='iso', orient='split')
+# 日本標準時で過去3日間＋今日
+def extract_last_3_days(df):
+    now = datetime.datetime.now(datetime.timezone(datetime.timedelta(hours=9), 'Asia/Tokyo'))
+    today = now.replace(hour=0, minute=0, second=0, microsecond=0)
+    three_days_ago = today - datetime.timedelta(days=3)
+    return df.query('@three_days_ago <= Time & Time <= @now')
 
 
-# 最近24時間のW（1分平均）
-def calc_watt_per_minute_last_24_hours(df_total):
-    now = datetime.datetime.now()
-    day_ago = now - datetime.timedelta(days=1)
-    return df_total.resample('T').mean().query('@day_ago <= Time & Time <= @now')
+# 最近12時間のW（1分平均）
+def calc_watt_per_minute_last_12_hours(df_total):
+    now = datetime.datetime.now(datetime.timezone.utc)
+    half_day_ago = now - datetime.timedelta(hours=12)
+    return df_total.resample('T').mean().query('@half_day_ago <= Time & Time <= @now')
 
 
 # 過去3日間＋今日のWh（1時間ごと）
 def calc_watt_hour_last_3_days(df_total):
-    return df_total.resample('H').mean()
+    df = df_total.resample('H').mean()
+    return extract_last_3_days(df)
 
 
 # 過去3日間＋今日のWh（12時間ごと）
 def calc_sum_watt_hour_per_12_hours_last_3_days(df_total):
-    return df_total.resample('H').mean().resample('12H', label='left', base=15).sum()
+    # UTC15時 (=JST0時) を基準に集計する
+    df = df_total.resample('H').mean().resample('12H', label='left', base=15).sum()
+    return extract_last_3_days(df)
 
 
 # 過去3日間＋今日の電気料金（12時間ごと）
 def calc_sum_bills_per_12_hours_last_3_days(df_total):
-    return df_total.resample('H').mean().resample('12H', label='left', base=15).sum() / 1000 * 25
+    # UTC15時 (=JST0時) を基準に集計する
+    df = df_total.resample('H').mean().resample('12H', label='left', base=15).sum() / 1000 * 25
+    return extract_last_3_days(df)
 
 
 @app.route('/')
@@ -66,22 +77,19 @@ def root():
 
 
 @app.route('/data')
-def get_watt_per_minute_last_24_hours():
+def data():
     df_total = load_csv_files()
-    df_w_last24hours = calc_watt_per_minute_last_24_hours(df_total)
+    df_w_last12hours = calc_watt_per_minute_last_12_hours(df_total)
     df_wh_last3days = calc_watt_hour_last_3_days(df_total)
-    df_sum_wh_last3days = calc_sum_watt_hour_per_12_hours_last_3_days(df_total)
     df_sum_yen_last3days = calc_sum_bills_per_12_hours_last_3_days(df_total)
 
     return "{{" \
-           "\"wattPerMinuteLast24Hours\": {w_last24hours}, " \
+           "\"wattPerMinuteLast12Hours\": {w_last12hours}, " \
            "\"wattHourLast3Days\": {wh_last3days}, " \
-           "\"sumWhPer12HoursLast3Days\": {sum_wh_last3days}, " \
            "\"sumBillsPer12HoursLast3Days\": {sum_yen_last3days}" \
            "}}".format(
-        w_last24hours=dataframe_to_json(df_w_last24hours),
+        w_last12hours=dataframe_to_json(df_w_last12hours),
         wh_last3days=dataframe_to_json(df_wh_last3days),
-        sum_wh_last3days=dataframe_to_json(df_sum_wh_last3days),
         sum_yen_last3days=dataframe_to_json(df_sum_yen_last3days)
     )
 

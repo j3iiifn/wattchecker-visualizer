@@ -9,14 +9,14 @@ function createData(json) {
     return result
 }
 
-function drawChartLast24Hours(wattPerMinuteLast24Hours) {
-    var ctx = document.getElementById('chartLast24Hours').getContext('2d');
+function drawChartLast12Hours(wattPerMinuteLast12Hours) {
+    var ctx = document.getElementById('chartLast12Hours').getContext('2d');
     var myChart = new Chart(ctx, {
         type: 'line',
         data: {
             datasets: [{
                 label: 'Average W / min',
-                data: wattPerMinuteLast24Hours,
+                data: wattPerMinuteLast12Hours,
                 backgroundColor: [
                     'rgba(255, 99, 132, 0.2)'
                 ],
@@ -157,11 +157,9 @@ fetch('/data')
         throw new Error('Network response was not ok.');
     })
     .then(function(responseJson) {
-        wattPerMinuteLast24Hours = createData(responseJson['wattPerMinuteLast24Hours']);
+        wattPerMinuteLast12Hours = createData(responseJson['wattPerMinuteLast12Hours']);
         wattHourLast3Days = createData(responseJson['wattHourLast3Days'])
         sumBillsPer12HoursLast3Days = createData(responseJson['sumBillsPer12HoursLast3Days']);
-        drawChartLast24Hours(wattPerMinuteLast24Hours);
+        drawChartLast12Hours(wattPerMinuteLast12Hours);
         drawChartLast3Days(wattHourLast3Days, sumBillsPer12HoursLast3Days);
-    }).catch(function(error) {
-        console.log('There has been a problem with your fetch operation: ', error.message);
     });
