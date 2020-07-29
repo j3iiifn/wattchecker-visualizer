@@ -66,6 +66,12 @@ function drawChartLast12Hours(wattPerMinuteLast12Hours) {
 }
 
 function drawChartLast3Days(wattHourLast3Days, sumBillsPer12HoursLast3Days) {
+    // グラフ右端まで線を伸ばすため、最新値で補間する
+    sumBillsPer12HoursLast3Days.push({
+        x: wattHourLast3Days[wattHourLast3Days.length - 1]['x'],
+        y: sumBillsPer12HoursLast3Days[sumBillsPer12HoursLast3Days.length - 1]['y']
+    })
+
     var ctx = document.getElementById('chartLast3Days').getContext('2d');
     var myChart = new Chart(ctx, {
         type: 'line',
